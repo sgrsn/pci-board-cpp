@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <lib/QEI/QEI.hpp>
 #include "../expart/common/basic.h"
+#include <lib/Diff/differentiator.hpp>
 
 int main(void)
 {
+  ntlab::Differentiator<double> diff;
 	ntlab::QEI qei(1, 4, 4000);
   qei.open();
   qei.set_channel_config();
@@ -12,10 +14,8 @@ int main(void)
 
   do{
 		qei.read();
-		for(int i = 0; i < 4; i++){
-			printf("%2dch: %08lx[pulse]  %8.3f[rad]\n", i+1, qei.pulse(i), qei.radian(i) );
-		}
-		cur_up(4);
+			printf("%08lx[pulse]  %8.3f[rad]  %8.3f[rad/s]\n", qei.pulse(0), qei.radian(0), diff.update(qei.radian(0)));
+		cur_up(1);
 	}while( !kbhit_linux() );
 
 	qei.close();

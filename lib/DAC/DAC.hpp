@@ -18,8 +18,8 @@ class DAC
   DAC(int id, int channels);
 
   // setter
-  void set_dac_board_id(int id) { id_ = id; };
-  void set_dac_channels(int n) { channels_ = n; };
+  void set_board_id(int id) { id_ = id; };
+  void set_channels(int n) { channels_ = n; };
 
   bool open(void);
   void dump_spec(void);
