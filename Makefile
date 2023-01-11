@@ -29,6 +29,10 @@ libplot.so: lib/eggx_plot/plot.cpp
 	egg -shared -o libplot.so lib/eggx_plot/plot.cpp
 	sudo cp libplot.so /usr/local/bin/
 
+liblog.so: lib/log/log.cpp
+	gcc -shared -o liblog.so lib/log/log.cpp
+	sudo cp liblog.so /usr/local/bin/
+
 #export LD_LIBRARY_PATH=/usr/local/bin:$LD_LIBRARY_PATH
         
 dac_demo: examples/dac_demo.cpp
@@ -47,7 +51,10 @@ plot_demo: examples/plot_demo.cpp
 	gcc -std=gnu++0x -I./ -L./ examples/plot_demo.cpp -o examples/plot_demo -lplot -lstdc++
 
 speed_control: examples/speed_control.cpp
-	g++ -I./ -L./ examples/speed_control.cpp -o examples/speed_control -ldac -lqei -ldiff -lpid -lstdc++
+	g++ -I./ -L./ examples/speed_control.cpp -o examples/speed_control -ldac -lqei -ldiff -lpid -lplot -lstdc++
+
+log_demo: examples/log_demo.cpp
+	g++ -I./ -L./ examples/log_demo.cpp -o examples/log_demo -llog -lstdc++
 
 clean:
 	$(RM) *~ ./*.o ./*.so examples/dac_demo examples/adc_demo examples/qei_demo examples/diff_demo examples/speed_control

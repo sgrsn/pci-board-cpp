@@ -6,6 +6,7 @@
 #include <lib/control/pid.hpp>
 #include <lib/eggx_plot/plot.hpp>
 #include <vector>
+#include <lib/eggx_plot/plot.hpp>
 
 int main(void)
 {
@@ -21,13 +22,14 @@ int main(void)
 	dac.set_channel_config();
 	dac.dump_spec();
 
-  ntlab::PID::Parameter pid_param{0.01, 2.0, 0.0};
+  ntlab::PID::Parameter pid_param{0.001, 0.05, 0.0};
   ntlab::PID pid(pid_param);
-  double ref_speed = 50.0;
-  double limit_voltage = 8.0;
+  double ref_speed = 100.0;
+  double limit_voltage = 4.0;
   double rad_per_sec = 0;
 
-  ntlab::Plot plot(100);
+  ntlab::Plot plot(1000);
+  plot.setYLim(0, 200);
   int time = 0;
 
   do{
@@ -39,7 +41,9 @@ int main(void)
     printf("%8.3f[rad]  %8.3f[rad/s], %8.3f[V]\n", qei.radian(0), rad_per_sec, u);
 		cur_up(1);
     
-    plot.updatePlot(time++, rad_per_sec));
+    plot.clear();
+    plot.updatePlot(time++, rad_per_sec);
+    plot.drawAutoAxisX();
     plot.draw();
 	}while( !kbhit_linux() );
 

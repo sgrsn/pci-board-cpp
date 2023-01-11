@@ -24,20 +24,12 @@ public:
   void setXLim(double xmin, double xmax) { xmin_=xmin; xmax_=xmax; };
   void setYLim(double ymin, double ymax) { ymin_=ymin; ymax_=ymax; };
 
-  void setLayer()
-  {
-    if(!is_layerd_)
-    {
-      eggx_layer(win_, 0, 1);
-      is_layerd_ = true;
-    }
-  }
-  void clear()
-  {
-    eggx_gclr(win_);
-  }
+  void setLayer();
+  void clear();
 
   void drawAxis();
+  void drawAutoAxisX();
+  void drawAutoAxisY();
   void drawAutoAxis();
 
 private:
