@@ -3,11 +3,15 @@ CFLAGS = -Wall -O2
 LIB  = -lstdc++ -lm
 LIB += -lgpg3300 -ldac
 
-all: libdac.so libqei.so dac_demo qei_demo diff_demo speed_control
+all: libdac.so libadc.so libqei.so libqei.so libdiff.so libpid.so dac_demo adc_demo qei_demo diff_demo speed_control
 
 libdac.so: lib/DAC/DAC.cpp
 	gcc -shared -o libdac.so lib/DAC/DAC.cpp -lgpg3300
 	sudo cp libdac.so /usr/local/bin/
+
+libadc.so: lib/ADC/adc.cpp
+	gcc -shared -o libadc.so lib/ADC/adc.cpp -lgpg3100
+	sudo cp libadc.so /usr/local/bin/
 
 libqei.so: lib/QEI/QEI.cpp
 	gcc -shared -o libqei.so lib/QEI/QEI.cpp -lgpg6201
@@ -17,19 +21,33 @@ libdiff.so: lib/Diff/differentiator.cpp
 	gcc -shared -o libdiff.so lib/Diff/differentiator.cpp -lrt
 	sudo cp libdiff.so /usr/local/bin/
 
+libpid.so: lib/control/pid.cpp
+	gcc -shared -o libpid.so lib/control/pid.cpp -lrt
+	sudo cp libpid.so /usr/local/bin/
+
+libplot.so: lib/eggx_plot/plot.cpp
+	egg -shared -o libplot.so lib/eggx_plot/plot.cpp
+	sudo cp libplot.so /usr/local/bin/
+
 #export LD_LIBRARY_PATH=/usr/local/bin:$LD_LIBRARY_PATH
         
-dac_demo: dac_demo.cpp
-	gcc -I./ -L./ dac_demo.cpp -o dac_demo -ldac -lstdc++
+dac_demo: examples/dac_demo.cpp
+	gcc -I./ -L./ examples/dac_demo.cpp -o examples/dac_demo -ldac -lstdc++
 
-qei_demo: qei_demo.cpp
-	gcc -I./ -L./ qei_demo.cpp -o qei_demo -lqei -lstdc++ -lrt
+adc_demo: examples/adc_demo.cpp
+	gcc -I./ -L./ examples/adc_demo.cpp -o examples/adc_demo -ladc -lstdc++
 
-diff_demo: diff_demo.cpp
-	gcc -I./ -L./ diff_demo.cpp -o diff_demo -ldiff -lstdc++
+qei_demo: examples/qei_demo.cpp
+	gcc -I./ -L./ examples/qei_demo.cpp -o examples/qei_demo -lqei -lstdc++ -lrt
 
-speed_control: speed_control.cpp
-	gcc -I./ -L./ speed_control.cpp -o speed_control -ldac -lqei -ldiff -lstdc++
+diff_demo: examples/diff_demo.cpp
+	gcc -I./ -L./ examples/diff_demo.cpp -o examples/diff_demo -ldiff -lstdc++
+
+plot_demo: examples/plot_demo.cpp
+	gcc -std=gnu++0x -I./ -L./ examples/plot_demo.cpp -o examples/plot_demo -lplot -lstdc++
+
+speed_control: examples/speed_control.cpp
+	g++ -I./ -L./ examples/speed_control.cpp -o examples/speed_control -ldac -lqei -ldiff -lpid -lstdc++
 
 clean:
-	$(RM) *~ ./*.o ./*.so dac_demo qei_demo diff_demo speed_control
+	$(RM) *~ ./*.o ./*.so examples/dac_demo examples/adc_demo examples/qei_demo examples/diff_demo examples/speed_control
