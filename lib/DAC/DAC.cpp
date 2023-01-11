@@ -9,6 +9,7 @@ DAC::DAC(int id, int channels)
 {
   id_ = id;
   channels_ = channels;
+	buf = (unsigned short*)malloc(sizeof(unsigned short) * channels_);
 }
 
 bool DAC::open(void)
@@ -54,7 +55,6 @@ bool DAC::output_single(Channel ch)
 {  
   if(ch.voltage >  ch.limit_voltage) ch.voltage =  ch.limit_voltage;
   if(ch.voltage < -ch.limit_voltage) ch.voltage = -ch.limit_voltage;
-  unsigned short *buf = (unsigned short*)malloc(sizeof(unsigned short) * channels_);
   if(ch.channel >= channels_ || ch.channel < 0)
   {
     printf("channel number is wrong!!!\r\n");

@@ -3,7 +3,7 @@ CFLAGS = -Wall -O2
 LIB  = -lstdc++ -lm
 LIB += -lgpg3300 -ldac
 
-all: libdac.so libadc.so libqei.so libqei.so libdiff.so libpid.so dac_demo adc_demo qei_demo diff_demo speed_control
+all: libdac.so libadc.so libqei.so libqei.so libdiff.so libpid.so libplot.so dac_demo adc_demo qei_demo diff_demo speed_control noload_runnnig_torque
 
 libdac.so: lib/DAC/DAC.cpp
 	gcc -shared -o libdac.so lib/DAC/DAC.cpp -lgpg3300
@@ -55,6 +55,12 @@ speed_control: examples/speed_control.cpp
 
 log_demo: examples/log_demo.cpp
 	g++ -I./ -L./ examples/log_demo.cpp -o examples/log_demo -llog -lstdc++
+
+noload_runnnig_torque: noload_runnnig_torque.cpp
+	g++ -I./ -L./ noload_runnnig_torque.cpp -o noload_runnnig_torque -ldac -lqei -ldiff -lpid -lplot -lpthread -lstdc++ /usr/lib/art_syscalls.o
+
+motor_torque: motor_torque.cpp
+	g++ -I./ -L./ motor_torque.cpp -o motor_torque -ldac -ladc -lqei -ldiff -lpid -lplot -llog -lpthread -lstdc++ /usr/lib/art_syscalls.o
 
 clean:
 	$(RM) *~ ./*.o ./*.so examples/dac_demo examples/adc_demo examples/qei_demo examples/diff_demo examples/speed_control

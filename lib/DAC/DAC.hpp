@@ -31,6 +31,7 @@ private:
   int id_;
   int channels_;
   DASMPLCHREQ* DaSmplChReq;
+  unsigned short *buf;
 };  // DAC
 
 } // ntlab

@@ -6,7 +6,7 @@ namespace ntlab
   
 Plot::Plot(int n) : n_(n)
 {
-  plot_.resize(10, {0, 0});
+  plot_.resize(n_, {0, 0});
   win_ = eggx_gopen(500, 500);
   eggx_gsetbgcolor(win_, "white"); 
   eggx_gclr(win_);

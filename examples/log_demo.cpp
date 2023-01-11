@@ -8,7 +8,7 @@ int main(void)
 { 
   char outstr[30];
   time_t t = time(NULL);
-  strftime(outstr, sizeof(outstr), "log%Y%m%d%H%M%S.csv", localtime(&t));
+  strftime(outstr, sizeof(outstr), "log/log%Y%m%d%H%M%S.csv", localtime(&t));
   printf("%s\r\n", outstr);
   ntlab::Log log(outstr);
   std::vector<std::string> legends;
