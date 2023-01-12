@@ -7,6 +7,7 @@
 
 #include <lib/QEI/QEI.hpp>
 #include <lib/DAC/DAC.hpp>
+#include <lib/ADC/adc.hpp>
 #include <lib/Diff/differentiator.hpp>
 #include <lib/control/pid.hpp>
 #include <lib/eggx_plot/plot.hpp>
@@ -20,12 +21,20 @@
 #include "param.hpp"
 
 bool exit_loop = false;
-ntlab::QEI qei(1, 4, 4000);
-ntlab::Plot plot(1000);
-double rad_per_sec = 0;
-double u = 0;
-double brake_torque = 0.2;  //[Nm]
-double ref_speed = 3000.0; //[RPM]
+double ref_brake_torque = 0.0;  //[Nm]
+
+struct ExperimentState
+{
+  double time;
+  double rad;
+  double rpm;
+  double input_torque;
+  double sensor_torque;
+  double brake_torque;
+  double efficiency;
+};
+
+ExperimentState state;
 
 void *control_function(void *arg)
 {
@@ -33,32 +42,88 @@ void *control_function(void *arg)
     perror("art_enter");
   }
 
+  // PID Controller
+  ntlab::PID::Parameter pid_param{SPEED_PID_CONTROLLER_KP, SPEED_PID_CONTROLLER_KI, SPEED_PID_CONTROLLER_KD};
+  ntlab::PID pid(pid_param);
+
+  // Encoder
+  ntlab::QEI qei(1, 4, 4000);
+  qei.open();
+  qei.set_channel_config();
+  qei.set_mode(0, MODE_DOWN);
+	qei.set_pulse(0, 4000);
   ntlab::Differentiator<double> diff;
 
+  // DAC for motor and brake
 	ntlab::DAC dac(1, 4);
 	dac.open();
 	dac.set_channel_config();
 	dac.dump_spec();
 
-  ntlab::PID::Parameter pid_param{0.001, 0.05, 0.0};
-  ntlab::PID pid(pid_param);
+  // ADC for Sensor
+  ntlab::ADC adc(1, 4);
+	adc.open();
+	adc.set_channel_config();
+	adc.dump_spec();
+
+  double settling_time = 20.0;
+  double rate = MOTOR_INPUT_LIMIT_SPEED / (settling_time/4);
+  
+  // Get offset time
+  timespec ts0;
+  clock_gettime(CLOCK_MONOTONIC, &ts0);
+  double t0 = (double)ts0.tv_sec + (double)ts0.tv_nsec*0.000000001;
 
   while (1)
   {
-    //if(art_wait() == -1){ perror("art_wait"); exit(1); }
     art_wait();
-		qei.read();
-    rad_per_sec = diff.update(qei.radian(0));
-    u = pid.control(ref_speed*2*M_PI/60, rad_per_sec);
-    ntlab::DAC::Channel ch1{MOTOR_DAC_CHANNEL, u, MOTOR_INPUT_LIMIT_VOLTAGE};
-    ntlab::DAC::Channel ch2{BRAKE_DAC_CHANNEL, brake_torque*5.0, BRAKE_INPUT_LIMIT_VOLTAGE};
+    if(exit_loop) break;
+
+    // Get time
+    timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    state.time = (double)ts.tv_sec + (double)ts.tv_nsec*0.000000001 - t0;
+
+    double ref_speed = 0;
+
+    // Calc motor reference speed (chopping waves)
+    if(state.time < settling_time/4)
+      ref_speed = rate * state.time;
+    else if(state.time < settling_time*3/4)
+      ref_speed = -rate * (state.time - settling_time/2);
+    else if(state.time < settling_time)
+      ref_speed = rate * (state.time - settling_time);
+    else
+      ref_speed = 0.0;
+
+    // Set brake torque
+    state.brake_torque = ref_brake_torque;
+
+    // Get torque sensor
+    double sensor_output = adc.read_single(0);
+    state.sensor_torque = sensor_output / 5.0 * 20.0 - TORQUESENSOR_OFFSET;
+    
+    // Get Encoder
+    qei.read();
+    state.rad = qei.radian(0);
+    state.rpm = diff.update(qei.radian(0)) * 60 / (2*M_PI);
+
+    // Calc input torque
+    state.input_torque = pid.control(ref_speed*2*M_PI/60, state.rpm*2*M_PI/60);
+
+    // Calc efficiency
+    //state.efficiency
+
+    // control motor and brake driver
+    ntlab::DAC::Channel ch1{MOTOR_DAC_CHANNEL, state.input_torque*MOTOR_TORQUE_TO_VOLTAGE, MOTOR_INPUT_LIMIT_VOLTAGE, DAC_OFFSET_VOLTAGE};
+    ntlab::DAC::Channel ch2{BRAKE_DAC_CHANNEL, state.brake_torque*5.0, BRAKE_INPUT_LIMIT_VOLTAGE};
     dac.output_single(ch1);
     dac.output_single(ch2);
-    if(exit_loop) break;
 	}
   printf("thread1 exit!!\n");
 	qei.close();
 	dac.close();
+	adc.close();
   art_exit();
 }
 
@@ -67,37 +132,45 @@ void *log_function(void *arg)
   if (art_enter(ART_PRIO_MAX, ART_TASK_PERIODIC, PERIODIC_TIME_LOG) != 0) {
     perror("art_enter");
   }
+  // Log file
   char outstr[30];
   time_t t = time(NULL);
   strftime(outstr, sizeof(outstr), "log/log%Y%m%d%H%M%S.csv", localtime(&t));
-  printf("%s\r\n", outstr);
-  /*ntlab::Log log(outstr);
+  ntlab::Log log(outstr);
   std::vector<std::string> legends;
   legends.push_back("Time [sec]");
   legends.push_back("Input Angle [rad]");
-  legends.push_back("Input Speed [RPM]");
+  legends.push_back("Input Speed [rpm]");
   legends.push_back("Input Torque [Nm]");
   legends.push_back("Output Torque [Nm]");
   legends.push_back("Brake Torque [Nm]");
   legends.push_back("Efficiency [%]");
   log.writeLegend(legends);
-  std::vector<double> data;*/
+  std::vector<std::string>().swap(legends);
+
   while(1)
   {
-    timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    double t = (double)ts.tv_sec + (double)ts.tv_nsec*0.000000001;
-
-    /*data.push_back(t);
-    data.push_back(qei.radian(0));
-    data.push_back(rad_per_sec*60.0/M_PI/2);
-    data.push_back(u);*/
     art_wait();
-    printf("%8.3f[rad]  %8.3f[rpm], %8.3f[V]\n", qei.radian(0), rad_per_sec*60/2/M_PI, u);
-    cur_up(1);
     if(exit_loop) break;
+
+    // Dump log data
+    std::vector<double> log_data;
+    log_data.push_back(state.time);
+    log_data.push_back(state.rad);
+    log_data.push_back(state.rpm);
+    log_data.push_back(state.input_torque);
+    log_data.push_back(state.sensor_torque);
+    log_data.push_back(state.brake_torque);
+    log_data.push_back(state.efficiency);
+    log.writeData(log_data);
+    std::vector<double>().swap(log_data);
+
+    // Console output
+    printf("%8.3f[rad] %8.3f[V], %8.3f[rpm]\n", state.rad, state.input_torque*MOTOR_TORQUE_TO_VOLTAGE, state.rpm);
+    cur_up(1);
   }
   printf("thread2 exit!!\n");
+  printf("%s\r\n", outstr);
   art_exit();
 }
 
@@ -109,15 +182,15 @@ void sig_handler(int sig)
 
 int main(int argc, char* argv[])
 {
-  qei.open();
-  qei.set_channel_config();
-  qei.set_mode(0, MODE_DOWN);
-	qei.set_pulse(0, 4000);
-  plot.setYLim(0, 500);
+  ntlab::Plot plot(300);
+  ntlab::Plot plot2(300);
+  plot.setYLim(-15, 15);
+  plot2.setYLim(-5000, 5000);
 
-  // Ctrl+Cが押されたときに生成されるシグナルを補足する関数のセットアップ
+  // Setup a callback function to get the Ctrl+C
   (void) signal(SIGINT, sig_handler);
 
+  // Generate threads
 	pthread_t cfthread, gfthread;
 
 	if(pthread_create(&cfthread, NULL, control_function, NULL)){
@@ -129,17 +202,27 @@ int main(int argc, char* argv[])
     return 1;
 	}
 
+  // Plot visualization
   printf("main enter!!\n");
   int time = 0;
   while (1)
   {
     plot.clear();
-    plot.updatePlot(time++, rad_per_sec);
+    plot.updatePlot(time++, state.input_torque*100);
     plot.drawAutoAxisX();
     plot.draw();
+    
+    plot2.clear();
+    plot2.updatePlot(time++, state.rpm);
+    plot2.drawAutoAxisX();
+    plot2.draw();
+
+    usleep(100000);
+
     if(exit_loop) break;
 	}
   plot.close();
+  plot2.close();
   printf("main exit!!\n");
   
 	if(pthread_join(cfthread, NULL)){ perror("pthread_join"); return 1;}
