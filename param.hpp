@@ -4,7 +4,7 @@
 
 // Experimental parameter
 #define MOTOR_INPUT_LIMIT_TORQUE 0.10
-#define MOTOR_INPUT_LIMIT_SPEED 4000  // rpm
+#define MOTOR_INPUT_LIMIT_SPEED 3000  // rpm
 
 // PID
 #define SPEED_PID_CONTROLLER_KP 2.72E-5

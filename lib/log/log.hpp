@@ -13,8 +13,8 @@ class Log
 {
  public:
   Log(const char *filename);
-  void writeLegend(std::vector<std::string> legends);
-  void writeData(std::vector<double> data);
+  void writeLegend(const std::vector<std::string>& legends);
+  void writeData(const std::vector<double>& data);
 
  private:
   std::ofstream ofs_;

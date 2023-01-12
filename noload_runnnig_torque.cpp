@@ -9,6 +9,7 @@
 #include <lib/DAC/DAC.hpp>
 #include <lib/ADC/adc.hpp>
 #include <lib/Diff/differentiator.hpp>
+#include <lib/filter/lowpass_filter.hpp>
 #include <lib/control/pid.hpp>
 #include <lib/eggx_plot/plot.hpp>
 #include <lib/log/log.hpp>
@@ -52,6 +53,7 @@ void *control_function(void *arg)
   qei.set_channel_config();
   qei.set_mode(0, MODE_DOWN);
 	qei.set_pulse(0, 4000);
+  // Encoder Differentiator
   ntlab::Differentiator<double> diff;
 
   // DAC for motor and brake
@@ -136,6 +138,7 @@ void *log_function(void *arg)
   char outstr[30];
   time_t t = time(NULL);
   strftime(outstr, sizeof(outstr), "log/log%Y%m%d%H%M%S.csv", localtime(&t));
+  
   ntlab::Log log(outstr);
   std::vector<std::string> legends;
   legends.push_back("Time [sec]");
@@ -208,7 +211,7 @@ int main(int argc, char* argv[])
   while (1)
   {
     plot.clear();
-    plot.updatePlot(time++, state.input_torque*100);
+    //plot.updatePlot(time++, state.input_torque*100);
     plot.drawAutoAxisX();
     plot.draw();
     

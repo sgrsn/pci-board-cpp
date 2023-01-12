@@ -9,7 +9,7 @@ Log::Log(const char *filename) : ofs_(filename)
     std::cout << "can not open the file" << std::endl;
   }
 }
-void Log::writeLegend(std::vector<std::string> legends)
+void Log::writeLegend(const std::vector<std::string>& legends)
 {
   for (std::vector<std::string>::const_iterator it = legends.begin(), e = legends.end(); it != e; ++it)
   {
@@ -17,7 +17,7 @@ void Log::writeLegend(std::vector<std::string> legends)
   }
   ofs_ << std::endl;
 }
-void Log::writeData(std::vector<double> data)
+void Log::writeData(const std::vector<double>& data)
 {
   for (std::vector<double>::const_iterator it = data.begin(), e = data.end(); it != e; ++it)
   {
