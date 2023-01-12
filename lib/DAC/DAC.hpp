@@ -12,6 +12,7 @@ class DAC
     int channel;
     double voltage; 
     double limit_voltage;
+    double offset_voltage;
   };
 
   DAC() { };

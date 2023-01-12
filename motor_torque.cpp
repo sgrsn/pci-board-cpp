@@ -21,7 +21,7 @@
 #include "param.hpp"
 
 bool exit_loop = false;
-double ref_brake_torque = 0.2;  //[Nm]
+double ref_brake_torque = 1.0;  //[Nm]
 double ref_speed = 1000.0; //[RPM]
 
 struct ExperimentState
@@ -96,13 +96,13 @@ void *control_function(void *arg)
 
     // Get torque sensor
     double sensor_output = adc.read_single(0);
-    state.sensor_torque = sensor_output / 5.0 * 20.0;
+    state.sensor_torque = sensor_output / 5.0 * 20.0 - TORQUESENSOR_OFFSET;
     
     // Get Encoder
     qei.read();
     state.rad = qei.radian(0);
 
-    ntlab::DAC::Channel ch1{MOTOR_DAC_CHANNEL, state.input_volt, MOTOR_INPUT_LIMIT_VOLTAGE};
+    ntlab::DAC::Channel ch1{MOTOR_DAC_CHANNEL, state.input_volt, MOTOR_INPUT_LIMIT_VOLTAGE, DAC_OFFSET_VOLTAGE};
     ntlab::DAC::Channel ch2{BRAKE_DAC_CHANNEL, state.brake_torque*5.0, BRAKE_INPUT_LIMIT_VOLTAGE};
     dac.output_single(ch1);
     dac.output_single(ch2);
@@ -123,7 +123,6 @@ void *log_function(void *arg)
   char outstr[30];
   time_t t = time(NULL);
   strftime(outstr, sizeof(outstr), "log/log%Y%m%d%H%M%S.csv", localtime(&t));
-  printf("%s\r\n", outstr);
   ntlab::Log log(outstr);
   std::vector<std::string> legends;
   legends.push_back("Time [sec]");
@@ -132,7 +131,9 @@ void *log_function(void *arg)
   legends.push_back("Input Voltage [V]");
   legends.push_back("Output Torque [Nm]");
   legends.push_back("Brake Torque [Nm]");
+  legends.push_back("Efficiency [%]");
   log.writeLegend(legends);
+  std::vector<std::string>().swap(legends);
 
   while(1)
   {
@@ -147,13 +148,16 @@ void *log_function(void *arg)
     log_data.push_back(state.input_volt);
     log_data.push_back(state.sensor_torque);
     log_data.push_back(state.brake_torque);
+    log_data.push_back(state.efficiency);
     log.writeData(log_data);
+    std::vector<double>().swap(log_data);
 
     // Console output
     printf("%8.3f[rad] %8.3f[V], %8.3f[Nm]\n", state.rad, state.input_volt, state.sensor_torque);
     cur_up(1);
   }
   printf("thread2 exit!!\n");
+  printf("%s\r\n", outstr);
   art_exit();
 }
 
@@ -200,7 +204,7 @@ int main(int argc, char* argv[])
     plot2.drawAutoAxisX();
     plot2.draw();
 
-    usleep(100000);
+    usleep(1000000);
 
     if(exit_loop) break;
 	}

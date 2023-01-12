@@ -79,6 +79,7 @@ void Plot::drawAutoAxisX()
   xmin_ = *std::min_element(x.begin(), x.end());
   xmax_ = *std::max_element(x.begin(), x.end());
   drawAxis();
+  std::vector<double>().swap(x);
 }
 void Plot::drawAutoAxisY()
 {
@@ -90,6 +91,7 @@ void Plot::drawAutoAxisY()
   ymin_ = *std::min_element(y.begin(), y.end());
   ymax_ = *std::max_element(y.begin(), y.end());
   drawAxis();
+  std::vector<double>().swap(y);
 }
 void Plot::drawAutoAxis()
 {
@@ -114,6 +116,8 @@ void Plot::drawAutoAxis()
   eggx_drawstr(win_, xmax_, ymin_-fontsize/4, fontsize, 0.0, "%f", xmax_);
   eggx_drawstr(win_, xmin_-fontsize/2, ymin_, fontsize, 0.0, "%f", ymin_);
   eggx_drawstr(win_, xmin_-fontsize/2, ymax_, fontsize, 0.0, "%f", ymax_);
+  std::vector<double>().swap(x);
+  std::vector<double>().swap(y);
 }
 
 } // namespace ntlab

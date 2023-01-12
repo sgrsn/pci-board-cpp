@@ -60,7 +60,7 @@ bool DAC::output_single(Channel ch)
     printf("channel number is wrong!!!\r\n");
     return false;
   }
-  buf[ch.channel] = (unsigned short)((ch.voltage/20.0)*0xffff+0x8000);
+  buf[ch.channel] = (unsigned short)(((ch.voltage-ch.offset_voltage)/20.0)*0xffff+0x8000);
   int nRet = DaOutputDA(id_, channels_, DaSmplChReq, buf);
   return true;
 }

@@ -57,7 +57,7 @@ log_demo: examples/log_demo.cpp
 	g++ -I./ -L./ examples/log_demo.cpp -o examples/log_demo -llog -lstdc++
 
 noload_runnnig_torque: noload_runnnig_torque.cpp
-	g++ -I./ -L./ noload_runnnig_torque.cpp -o noload_runnnig_torque -ldac -lqei -ldiff -lpid -lplot -lpthread -lstdc++ /usr/lib/art_syscalls.o
+	g++ -I./ -L./ noload_runnnig_torque.cpp -o noload_runnnig_torque -ldac -ladc -lqei -ldiff -lpid -lplot -llog -lpthread -lstdc++ /usr/lib/art_syscalls.o
 
 motor_torque: motor_torque.cpp
 	g++ -I./ -L./ motor_torque.cpp -o motor_torque -ldac -ladc -lqei -ldiff -lpid -lplot -llog -lpthread -lstdc++ /usr/lib/art_syscalls.o
