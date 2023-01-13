@@ -55,7 +55,7 @@ void *control_function(void *arg)
 	qei.set_pulse(0, 4000);
   // Encoder Differentiator
   ntlab::Differentiator<double> diff;
-
+  
   // DAC for motor and brake
 	ntlab::DAC dac(1, 4);
 	dac.open();
@@ -131,7 +131,7 @@ void *control_function(void *arg)
 
 void *log_function(void *arg)
 {
-  if (art_enter(ART_PRIO_MAX, ART_TASK_PERIODIC, PERIODIC_TIME_LOG) != 0) {
+  if (art_enter(ART_PRIO_MIN, ART_TASK_PERIODIC, PERIODIC_TIME_LOG) != 0) {
     perror("art_enter");
   }
   // Log file
@@ -185,9 +185,10 @@ void sig_handler(int sig)
 
 int main(int argc, char* argv[])
 {
-  ntlab::Plot plot(300);
-  ntlab::Plot plot2(300);
-  plot.setYLim(-15, 15);
+  ntlab::Plot plot(1000);
+  ntlab::Plot plot2(1000);
+  plot.setYLim(-150, 150);
+  plot2.setXLim(0, 2000);
   plot2.setYLim(-5000, 5000);
 
   // Setup a callback function to get the Ctrl+C
@@ -211,16 +212,18 @@ int main(int argc, char* argv[])
   while (1)
   {
     plot.clear();
-    //plot.updatePlot(time++, state.input_torque*100);
+    plot.updatePlot(state.time, state.input_torque*1000);
     plot.drawAutoAxisX();
+    //plot.drawAutoAxis();
     plot.draw();
     
     plot2.clear();
-    plot2.updatePlot(time++, state.rpm);
-    plot2.drawAutoAxisX();
+    plot2.updatePlot(state.time*100, state.rpm);
+    //plot2.drawAutoAxisX();
+    plot2.drawAxis();
     plot2.draw();
 
-    usleep(100000);
+    usleep(10000);
 
     if(exit_loop) break;
 	}

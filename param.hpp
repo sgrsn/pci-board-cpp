@@ -1,5 +1,5 @@
 
-#define PERIODIC_TIME_CONTROL 1000 // 実行周期　μs
+#define PERIODIC_TIME_CONTROL 2000 // 実行周期　μs
 #define PERIODIC_TIME_LOG 10000 // 実行周期　μs
 
 // Experimental parameter
@@ -7,9 +7,9 @@
 #define MOTOR_INPUT_LIMIT_SPEED 3000  // rpm
 
 // PID
-#define SPEED_PID_CONTROLLER_KP 2.72E-5
-#define SPEED_PID_CONTROLLER_KI 1.36E-3
-#define SPEED_PID_CONTROLLER_KD 0.000
+#define SPEED_PID_CONTROLLER_KP 20.00E-5
+#define SPEED_PID_CONTROLLER_KI 3.00E-3
+#define SPEED_PID_CONTROLLER_KD  0.00
 
 // motor
 #define MOTOR_INPUT_LIMIT_VOLTAGE 5.0

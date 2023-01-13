@@ -25,6 +25,10 @@ libpid.so: lib/control/pid.cpp
 	gcc -shared -o libpid.so lib/control/pid.cpp -lrt
 	sudo cp libpid.so /usr/local/bin/
 
+liblpf.so: lib/filter/lowpass_filter.cpp
+	gcc -shared -o liblpf.so lib/filter/lowpass_filter.cpp
+	sudo cp liblpf.so /usr/local/bin/
+
 libplot.so: lib/eggx_plot/plot.cpp
 	egg -shared -o libplot.so lib/eggx_plot/plot.cpp
 	sudo cp libplot.so /usr/local/bin/
@@ -57,7 +61,10 @@ log_demo: examples/log_demo.cpp
 	g++ -I./ -L./ examples/log_demo.cpp -o examples/log_demo -llog -lstdc++
 
 noload_runnnig_torque: noload_runnnig_torque.cpp
-	g++ -I./ -L./ noload_runnnig_torque.cpp -o noload_runnnig_torque -ldac -ladc -lqei -ldiff -lpid -lplot -llog -lpthread -lstdc++ /usr/lib/art_syscalls.o
+	g++ -I./ -L./ noload_runnnig_torque.cpp -o noload_runnnig_torque -ldac -ladc -lqei -ldiff -llpf -lpid -lplot -llog -lpthread -lstdc++ /usr/lib/art_syscalls.o
+
+crash_test: crash_test.cpp
+	g++ -I./ -L./ crash_test.cpp -o crash_test -ldac -ladc -lqei -ldiff -llpf -lpid -lplot -llog -lpthread -lstdc++ /usr/lib/art_syscalls.o
 
 motor_torque: motor_torque.cpp
 	g++ -I./ -L./ motor_torque.cpp -o motor_torque -ldac -ladc -lqei -ldiff -lpid -lplot -llog -lpthread -lstdc++ /usr/lib/art_syscalls.o
