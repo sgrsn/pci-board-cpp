@@ -23,4 +23,4 @@
 #define BRAKE_DAC_CHANNEL 2
 
 // torque sensor
-#define TORQUESENSOR_OFFSET 0.0876
+#define TORQUESENSOR_OFFSET 0.0965

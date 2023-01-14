@@ -22,8 +22,8 @@
 #include "param.hpp"
 
 bool exit_loop = false;
-double ref_brake_torque = 0.2;  //[Nm]
-double gear_ratio = 141;
+double ref_brake_torque = 1.0;  //[Nm]
+double ref_motor_limit_torque = 0.02;  //[Nm]
 
 struct ExperimentState
 {
@@ -70,7 +70,7 @@ void *control_function(void *arg)
 	adc.dump_spec();
 
   double settling_time = 20.0;
-  double rate = MOTOR_INPUT_LIMIT_SPEED / (settling_time/4);
+  double rate = ref_motor_limit_torque / (settling_time/4);
   
   // Get offset time
   timespec ts0;
@@ -87,18 +87,19 @@ void *control_function(void *arg)
     clock_gettime(CLOCK_MONOTONIC, &ts);
     state.time = (double)ts.tv_sec + (double)ts.tv_nsec*0.000000001 - t0;
 
-    double ref_speed = 0;
-
-    // Calc motor reference speed (chopping waves)
+    // Calc motor reference torque (chopping waves)
     if(state.time < settling_time/4)
-      ref_speed = rate * state.time;
-    //else ref_speed = MOTOR_INPUT_LIMIT_SPEED;
+      state.input_torque = rate * state.time;
     else if(state.time < settling_time*3/4)
-      ref_speed = -rate * (state.time - settling_time/2);
-    else if(state.time < settling_time)
-      ref_speed = rate * (state.time - settling_time);
+      state.input_torque = -rate * (state.time - settling_time/2);
+    else if(state.time < settling_time*5/4)
+      state.input_torque = rate * (state.time - settling_time);
+    else if(state.time < settling_time*7/4)
+      state.input_torque = -rate * (state.time - settling_time*3/2);
+    else if(state.time < settling_time*2)
+      state.input_torque = rate * (state.time - 2*settling_time);
     else
-      ref_speed = 0.0;
+      state.input_torque = 0.0;
 
     // Set brake torque
     state.brake_torque = ref_brake_torque;
@@ -112,12 +113,9 @@ void *control_function(void *arg)
     state.rad = qei.radian(0);
     state.rpm = diff.update(qei.radian(0)) * 60 / (2*M_PI);
 
-    // Calc input torque
-    state.input_torque = pid.control(ref_speed*2*M_PI/60, state.rpm*2*M_PI/60);
-
     // Calc efficiency
     if(state.input_torque == 0) state.efficiency = 0;
-    else state.efficiency = state.sensor_torque / state.input_torque / gear_ratio * 100;
+    else state.efficiency = state.sensor_torque / state.input_torque / 139 * 100;
 
     // control motor and brake driver
     ntlab::DAC::Channel ch1{MOTOR_DAC_CHANNEL, state.input_torque*MOTOR_TORQUE_TO_VOLTAGE, MOTOR_INPUT_LIMIT_VOLTAGE, DAC_OFFSET_VOLTAGE};
@@ -172,7 +170,7 @@ void *log_function(void *arg)
     std::vector<double>().swap(log_data);
 
     // Console output
-    printf("%8.3f[rad] %8.3f[Nm], %8.3f[rpm], %8.3f[-]\n", state.rad, state.sensor_torque, state.rpm, state.efficiency);
+    printf("%8.3f[rad] %8.3f[Nm], %8.3f[rpm], %8.3f[-]\n", state.rad, state.input_torque, state.rpm, state.efficiency);
     cur_up(1);
   }
   printf("thread2 exit!!\n");
